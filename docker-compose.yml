@@ -1,0 +1,64 @@
+version: '3'
+services:
+  rabbitmq:
+    container_name: rabbitmq-devsu
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - devsu-network
+
+  postgres_cliente:
+    container_name: postgres-cliente-devsu
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: devsu_clientes
+      POSTGRES_USER: devsu
+      POSTGRES_PASSWORD: devsu
+    volumes:
+      - ./scripts_cliente:/docker-entrypoint-initdb.d
+    networks:
+      - devsu-network
+
+  postgres_banco:
+    container_name: postgres-banco-devsu
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: devsu_cuentas
+      POSTGRES_USER: devsu
+      POSTGRES_PASSWORD: devsu
+    volumes:
+      - ./scripts_banco:/docker-entrypoint-initdb.d
+    networks:
+      - devsu-network
+
+  cliente:
+    container_name: cliente-devsu
+    build:
+      context: ./userService
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    depends_on:
+      - rabbitmq
+      - postgres_cliente
+    networks:
+      - devsu-network
+
+  banco:
+    container_name: banco-devsu
+    build:
+      context: ./bankService
+      dockerfile: Dockerfile
+    ports:
+      - "9000:9000"
+    depends_on:
+      - rabbitmq
+      - postgres_banco
+    networks:
+      - devsu-network
+
+networks:
+  devsu-network:
+    driver: bridge
